@@ -1,0 +1,20 @@
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+fs.mkdirSync('uploads', { recursive: true });
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/meetings', require('./routes/meetings'));
+app.use('/api/decisions', require('./routes/decisions'));
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => app.listen(process.env.PORT || 5000, () => console.log('Server running')))
+  .catch(console.error);
