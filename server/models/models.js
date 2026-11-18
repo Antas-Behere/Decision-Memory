@@ -26,5 +26,16 @@ const Decision = model('Decision', new Schema({
   documents: [{ name: String, url: String }],
   createdBy: { type: Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true }));
+const Comment = model('Comment', new Schema({
+  decision: { type: Schema.Types.ObjectId, ref: 'Decision' },
+  text: String,
+  author: { type: Schema.Types.ObjectId, ref: 'User' }
+}, { timestamps: true }));
 
-module.exports = { User, Meeting, Decision };
+const Notification = model('Notification', new Schema({
+  user: { type: Schema.Types.ObjectId, ref: 'User' },
+  text: String,
+  read: { type: Boolean, default: false }
+}, { timestamps: true }));
+
+module.exports = { User, Meeting, Decision, Comment, Notification };

@@ -16,6 +16,9 @@ async function api(path, opts = {}) {
 }
 
 const fmt = d => new Date(d).toLocaleDateString();
+const myId = () => {
+  try { return JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id; } catch { return null; }
+};
 
 function Auth({ onLogin }) {
   const [mode, setMode] = useState('login');
@@ -51,13 +54,92 @@ function Auth({ onLogin }) {
   );
 }
 
-function DecisionCard({ d, reload }) {
-  const decide = async status => {
-    try {
-      await api(`/decisions/${d._id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
-      reload();
-    } catch (e) { alert(e.message); }
+function Comments({ id }) {
+  const [list, setList] = useState([]);
+  const [text, setText] = useState('');
+  const load = () => api('/comments/' + id).then(setList).catch(() => {});
+  useEffect(() => { load(); }, []);
+
+  const add = async e => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    try { await api('/comments/' + id, { method: 'POST', body: JSON.stringify({ text }) }); setText(''); load(); }
+    catch (x) { alert(x.message); }
   };
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      {list.map(c => <p key={c._id}><b>{c.author?.name}:</b> {c.text} <small>{fmt(c.createdAt)}</small></p>)}
+      <form className="row" onSubmit={add}>
+        <input placeholder="Add a comment..." value={text} onChange={e => setText(e.target.value)} />
+        <button className="go">Post</button>
+      </form>
+    </div>
+  );
+}
+
+function DecisionCard({ d, reload }) {
+  const [showC, setShowC] = useState(false);
+  const [edit, setEdit] = useState(false);
+  const [f, setF] = useState({ title: d.title, description: d.description || '', rationale: d.rationale || '', alternatives: d.alternatives || '' });
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+  const mine = reload && d.status === 'Proposed' && d.createdBy?._id === myId();
+
+  const decide = async status => {
+    try { await api(`/decisions/${d._id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); reload(); }
+    catch (e) { alert(e.message); }
+  };
+  const save = async () => {
+    try { await api(`/decisions/${d._id}`, { method: 'PUT', body: JSON.stringify(f) }); setEdit(false); reload(); }
+    catch (e) { alert(e.message); }
+  };
+  const remove = async () => {
+    if (!confirm('Delete this decision?')) return;
+    try { await api(`/decisions/${d._id}`, { method: 'DELETE' }); reload(); }
+    catch (e) { alert(e.message); }
+  };
+
+  if (edit) return (
+    <div className="card">
+      <input value={f.title} onChange={set('title')} />
+      <textarea value={f.description} onChange={set('description')} placeholder="Description" />
+      <textarea value={f.rationale} onChange={set('rationale')} placeholder="Rationale" />
+      <textarea value={f.alternatives} onChange={set('alternatives')} placeholder="Alternatives" />
+      <div className="row">
+        <button className="go" onClick={save}>Save</button>
+        <button className="go" style={{ background: '#6b778c' }} onClick={() => setEdit(false)}>Cancel</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className={`card dot st-${d.status}`}>
+      <div className="label" />
+      <h3>{d.title} <span className="badge">{d.status}</span></h3>
+      <small>{fmt(d.decidedOn)} {d.meeting && `• ${d.meeting.title}`} {d.approvedBy && `• ${d.approvedBy}`}</small>
+      {d.createdBy && <small>✍️ Recorded by {d.createdBy.name}</small>}
+      {d.description && <p>{d.description}</p>}
+      {d.rationale && <p><b>Why:</b> {d.rationale}</p>}
+      {d.alternatives && <p><b>Alternatives:</b> {d.alternatives}</p>}
+      {d.documents?.map(x => <div key={x.url}><a href={API + x.url} target="_blank" rel="noreferrer">📎 {x.name}</a></div>)}
+      {d.status === 'Proposed' && reload && (
+        <div className="row">
+          <button className="go" onClick={() => decide('Approved')}>✔ Approve</button>
+          <button className="go" style={{ background: '#eb5a46' }} onClick={() => decide('Rejected')}>✖ Reject</button>
+        </div>
+      )}
+      {mine && (
+        <div className="row">
+          <button className="go" style={{ background: '#6b778c' }} onClick={() => setEdit(true)}>✎ Edit</button>
+          <button className="go" style={{ background: '#6b778c' }} onClick={remove}>🗑 Delete</button>
+        </div>
+      )}
+       <small style={{ cursor: 'pointer', color: '#0079bf' }} onClick={() => setShowC(!showC)}>💬 {showC ? 'Hide comments' : 'Comments'}</small>
+      {showC && <Comments id={d._id} />}
+
+    </div>
+  );
+}
 
   return (
     <div className={`card dot st-${d.status}`}>
@@ -77,7 +159,7 @@ function DecisionCard({ d, reload }) {
       )}
     </div>
   );
-}
+
 
 function Decisions() {
   const [list, setList] = useState([]);
@@ -180,6 +262,35 @@ function Timeline() {
   const [list, setList] = useState([]);
   useEffect(() => { api('/decisions').then(setList).catch(() => {}); }, []);
   return <div className="line">{list.map(d => <DecisionCard key={d._id} d={d} />)}</div>;
+}
+
+function Bell() {
+  const [list, setList] = useState([]);
+  const [open, setOpen] = useState(false);
+  const load = () => api('/notifications').then(setList).catch(() => {});
+  useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, []);
+  const unread = list.filter(n => !n.read).length;
+
+  const toggle = async () => {
+    if (!open) { setOpen(true); await api('/notifications/read', { method: 'PATCH' }).catch(() => {}); }
+    else { setOpen(false); load(); }
+  };
+
+  return (
+    <span style={{ position: 'relative' }}>
+      <button onClick={toggle}>🔔{unread > 0 && ` ${unread}`}</button>
+      {open && (
+        <div className="card" style={{ position: 'absolute', right: 0, top: 44, width: 320, zIndex: 10, maxHeight: 360, overflowY: 'auto', color: '#172b4d' }}>
+          {list.length === 0 && <small>No notifications</small>}
+          {list.map(n => (
+            <p key={n._id} style={{ margin: '8px 0', fontWeight: n.read ? 400 : 700 }}>
+              {n.text}<br /><small>{fmt(n.createdAt)}</small>
+            </p>
+          ))}
+        </div>
+      )}
+    </span>
+  );
 }
 
 export default function App() {

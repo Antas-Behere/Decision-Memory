@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
  "scripts": {
-   "dev": "nodemon server.js"
- },
+  "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+  "seed": "npm --prefix server run seed"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
