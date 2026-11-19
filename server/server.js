@@ -17,6 +17,8 @@ app.use('/api/decisions', require('./routes/decisions'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/activity', require('./routes/activity'));
+app.use('/api/ask', require('./routes/ask'));
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => app.listen(process.env.PORT || 5000, () => console.log('Server running')))
