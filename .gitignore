@@ -1,3 +1,6 @@
 node_modules
 .env
 uploads
+
+server/data/
+Decision-Memory-Source-Code.pdf

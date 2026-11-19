@@ -2,10 +2,12 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
- "scripts": {
-  "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
-  "seed": "npm --prefix server run seed"
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "db": "node localdb.js"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +23,7 @@
     "multer": "^2.4.0"
   },
   "devDependencies": {
+    "mongodb-memory-server": "^11.3.0",
     "nodemon": "^3.1.14"
   }
 }

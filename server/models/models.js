@@ -4,7 +4,8 @@ const { Schema, model } = mongoose;
 const User = model('User', new Schema({
   name: String,
   email: { type: String, unique: true },
-  password: String
+  password: String,
+  role: { type: String, enum: ['member', 'approver'], default: 'member' }
 }));
 
 const Meeting = model('Meeting', new Schema({

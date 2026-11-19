@@ -1,4 +1,4 @@
-const router = require('express').Router();
+﻿const router = require('express').Router();
 const multer = require('multer');
 const auth = require('../middleware/auth');
 const { Decision, User, Notification } = require('../models/models');
@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) =>
 
 router.post('/', upload.array('files'), async (req, res) => {
   const documents = (req.files || []).map(f => ({ name: f.originalname, url: `/uploads/${f.filename}` }));
-  const d = await Decision.create({ ...req.body, documents, createdBy: req.user.id });
+  const d = await Decision.create({ ...req.body, status: 'Proposed', documents, createdBy: req.user.id });
   const others = await User.find({ _id: { $ne: req.user.id }, role: 'approver' }, '_id');
   await Notification.insertMany(others.map(u => ({ user: u._id, text: `${req.user.name} proposed "${d.title}", awaiting review` })));
   res.json(d);

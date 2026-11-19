@@ -3,7 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/models');
 
-const sign = u => jwt.sign({ id: u._id, name: u.name }, process.env.JWT_SECRET, { expiresIn: '7d' });
+const sign = u => jwt.sign({ id: u._id, name: u.name, role: u.role || 'member' },
+  process.env.JWT_SECRET, { expiresIn: '7d' });
 
 router.post('/register', async (req, res) => {
   try {

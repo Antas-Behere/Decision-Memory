@@ -1,0 +1,26 @@
+{
+  "name": "decision-memory",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm --prefix server run db\" \"wait-on tcp:127.0.0.1:27017 && npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "seed": "wait-on tcp:127.0.0.1:27017 && npm --prefix server run seed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Antas-Behere/Decision-Memory.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Antas-Behere/Decision-Memory/issues"
+  },
+  "homepage": "https://github.com/Antas-Behere/Decision-Memory#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.7",
+    "wait-on": "^9.5.1"
+  }
+}
